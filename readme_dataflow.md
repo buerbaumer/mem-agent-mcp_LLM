@@ -8,46 +8,37 @@ This document analyzes the complete data flow for users interacting with the Mem
 
 ```mermaid
 graph TB
-    %% User Input Layer
-    User[👤 User] -->|Query| Client[🖥️ Client Application]
-    Client --> |MCP Protocol| MCPServer[🔌 MCP Server]
+    User[User] -->|Query| Client[Client Application]
+    Client -->|MCP Protocol| MCPServer[MCP Server]
     
-    %% Client Types
     Client --> Claude[Claude Desktop]
     Client --> LMStudio[LM Studio]
     Client --> ChatGPT[ChatGPT via HTTP]
     Client --> CLI[Chat CLI]
     
-    %% MCP Server Layer
-    MCPServer --> |use_memory_agent()| Agent[🧠 Memory Agent]
+    MCPServer -->|use_memory_agent| Agent[Memory Agent]
     
-    %% Agent Processing
-    Agent --> |1. Parse Query| Parser[📝 Query Parser]
-    Agent --> |2. Apply Filters| FilterEngine[🔒 Filter Engine]
-    Agent --> |3. Generate Response| LLM[🤖 LLM Backend]
+    Agent -->|Parse Query| Parser[Query Parser]
+    Agent -->|Apply Filters| FilterEngine[Filter Engine]
+    Agent -->|Generate Response| LLM[LLM Backend]
     
-    %% LLM Backend Options
     LLM --> OpenAI[OpenAI API]
     LLM --> vLLM[vLLM Server]
     LLM --> MLX[MLX Models]
     
-    %% Memory Operations
-    Agent --> |4. Execute Code| Sandbox[⚡ Sandboxed Engine]
-    Sandbox --> |Memory Operations| Tools[🛠️ Memory Tools]
+    Agent -->|Execute Code| Sandbox[Sandboxed Engine]
+    Sandbox -->|Memory Operations| Tools[Memory Tools]
     
-    %% Storage Layer
-    Tools --> |Read/Write| FileSystem[💾 File System]
+    Tools -->|Read/Write| FileSystem[File System]
     FileSystem --> UserMD[user.md]
     FileSystem --> EntitiesDir[entities/]
     
-    %% Response Flow
-    Sandbox --> |Results| Agent
-    Agent --> |Final Response| MCPServer
-    MCPServer --> |MCP Protocol| Client
-    Client --> |Display| User
+    Sandbox -->|Results| Agent
+    Agent -->|Final Response| MCPServer
+    MCPServer -->|MCP Protocol| Client
+    Client -->|Display| User
     
-    %% Configuration Files
-    ConfigFiles[⚙️ Config Files] --> Agent
+    ConfigFiles[Config Files] --> Agent
     ConfigFiles --> MemoryPath[.memory_path]
     ConfigFiles --> Filters[.filters]
     ConfigFiles --> ModelName[.mlx_model_name]
@@ -132,9 +123,9 @@ graph LR
     end
     
     subgraph "Entity Relationships"
-        UserFile -.->|[[entities/acme_corp.md]]| CompanyA
-        UserFile -.->|[[entities/john_doe.md]]| PersonA
-        CompanyA -.->|[[entities/john_doe.md]]| PersonA
+        UserFile -.->|acme_corp_link| CompanyA
+        UserFile -.->|john_doe_link| PersonA
+        CompanyA -.->|employee_link| PersonA
     end
 ```
 
@@ -175,12 +166,12 @@ sequenceDiagram
 graph LR
     OriginalQuery[Original Query] --> FilterEngine[Filter Engine]
     FiltersFile[.filters file] --> FilterEngine
-    FilterEngine --> ModifiedQuery["Query + <filter> tags"]
+    FilterEngine --> ModifiedQuery[Query + filter tags]
     
     subgraph "Filter Examples"
-        F1["1. Do not reveal personal info"]
-        F2["2. Obfuscate business data"]
-        F3["3. Hide contact details"]
+        F1[1. Do not reveal personal info]
+        F2[2. Obfuscate business data]
+        F3[3. Hide contact details]
     end
     
     FiltersFile -.-> F1
@@ -194,9 +185,9 @@ graph LR
 graph TD
     RawResponse[Raw LLM Response] --> Parser[Response Parser]
     
-    Parser --> Think["<think>...</think>"]
-    Parser --> Python["<python>...</python>"]
-    Parser --> Reply["<reply>...</reply>"]
+    Parser --> Think[think sections]
+    Parser --> Python[python sections]
+    Parser --> Reply[reply sections]
     
     Think --> ReasoningExtracted[Agent Reasoning]
     Python --> CodeExtracted[Python Code for Execution]
@@ -208,19 +199,19 @@ graph TD
 ```mermaid
 graph LR
     subgraph "Read Operations"
-        ReadFile[read_file()] --> FileContent[File Content]
-        FollowLink[follow_link()] --> LinkedContent[Linked File Content]
-        ListFiles[list_files()] --> FileList[Directory Listing]
+        ReadFile[read_file] --> FileContent[File Content]
+        FollowLink[follow_link] --> LinkedContent[Linked File Content]
+        ListFiles[list_files] --> FileList[Directory Listing]
     end
     
     subgraph "Write Operations"
-        WriteFile[write_to_file()] --> NewFile[Create/Update File]
-        UpdateFile[update_file()] --> ModifiedFile[Modified File]
-        CreateDir[create_directory()] --> NewDir[New Directory]
+        WriteFile[write_to_file] --> NewFile[Create/Update File]
+        UpdateFile[update_file] --> ModifiedFile[Modified File]
+        CreateDir[create_directory] --> NewDir[New Directory]
     end
     
     subgraph "Entity Link Resolution"
-        ObsidianLink["[[entities/name.md]]"] --> FilePath[entities/name.md]
+        ObsidianLink[entity_links] --> FilePath[entity_files]
         FilePath --> FileAccess[File Read/Write]
     end
 ```
@@ -232,21 +223,21 @@ graph TB
     subgraph "Data Source Integration"
         Sources[Data Sources] --> Connectors[Memory Connectors]
         
-        Sources --> ChatGPTZip[ChatGPT Export .zip]
-        Sources --> NotionZip[Notion Export .zip]
+        Sources --> ChatGPTZip[ChatGPT Export ZIP]
+        Sources --> NotionZip[Notion Export ZIP]
         Sources --> GitHubAPI[GitHub Live API]
         Sources --> GoogleDocs[Google Docs API]
     end
     
     subgraph "Connector Processing Pipeline"
-        Connectors --> Extract[extract_data()]
-        Extract --> Organize[organize_data()]
-        Organize --> Generate[generate_memory_files()]
+        Connectors --> Extract[extract_data]
+        Extract --> Organize[organize_data]
+        Organize --> Generate[generate_memory_files]
     end
     
     subgraph "Memory Output"
         Generate --> UserMD[user.md]
-        Generate --> EntityFiles[entities/*.md]
+        Generate --> EntityFiles[entities_files]
         Generate --> Relationships[Entity Links]
     end
     
@@ -263,10 +254,10 @@ graph TB
 graph LR
     User --> MCPServer
     MCPServer --> Agent
-    Agent --> |Read .mlx_model_name| ModelConfig[Model Configuration]
+    Agent -->|Read .mlx_model_name| ModelConfig[Model Configuration]
     ModelConfig --> MLXClient[MLX Client]
-    MLXClient --> |4-bit/8-bit quantization| MLXModel[Local MLX Model]
-    MLXModel --> |Inference| Response
+    MLXClient -->|4-bit/8-bit quantization| MLXModel[Local MLX Model]
+    MLXModel -->|Inference| Response
     Response --> Agent
 ```
 
@@ -277,9 +268,9 @@ graph LR
     User --> MCPServer
     MCPServer --> Agent
     Agent --> vLLMClient[vLLM Client]
-    vLLMClient --> |HTTP Request| vLLMServer[vLLM Server]
-    vLLMServer --> |GPU Inference| LocalModel[Local LLM]
-    LocalModel --> |Full Precision| Response
+    vLLMClient -->|HTTP Request| vLLMServer[vLLM Server]
+    vLLMServer -->|GPU Inference| LocalModel[Local LLM]
+    LocalModel -->|Full Precision| Response
     Response --> Agent
 ```
 
@@ -290,9 +281,9 @@ graph LR
     User --> MCPServer
     MCPServer --> Agent
     Agent --> OpenAIClient[OpenAI Client]
-    OpenAIClient --> |HTTPS| OpenRouter[OpenRouter API]
-    OpenRouter --> |Cloud Model| Claude[Claude/GPT-4]
-    Claude --> |API Response| Response
+    OpenAIClient -->|HTTPS| OpenRouter[OpenRouter API]
+    OpenRouter -->|Cloud Model| Claude[Claude/GPT-4]
+    Claude -->|API Response| Response
     Response --> Agent
 ```
 
@@ -324,21 +315,21 @@ graph TD
 
 ```mermaid
 graph LR
-    subgraph "Hot Path (Frequent Access)"
+    subgraph "Hot Path Frequent Access"
         UserFile[user.md]
         RecentEntities[Recent entities/*.md]
         ConfigFiles[.memory_path, .filters]
     end
     
-    subgraph "Cold Path (Infrequent Access)"
+    subgraph "Cold Path Infrequent Access"
         ArchiveEntities[Archive entities/*.md]
         LargeFiles[Large content files]
         HistoricalData[Historical conversation data]
     end
     
-    Agent --> |High Frequency| UserFile
-    Agent --> |Medium Frequency| RecentEntities
-    Agent --> |Low Frequency| ArchiveEntities
+    Agent -->|High Frequency| UserFile
+    Agent -->|Medium Frequency| RecentEntities
+    Agent -->|Low Frequency| ArchiveEntities
 ```
 
 ### Caching Strategy
@@ -404,3 +395,4 @@ graph TB
 ---
 
 *This data flow analysis provides a comprehensive view of how information moves through the Memory Agent MCP system, from user input to persistent storage and response generation. Understanding these flows is crucial for debugging, optimization, and extending the system's capabilities.*
+
